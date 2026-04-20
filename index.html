@@ -1,10 +1,158 @@
 <!DOCTYPE html>
-<html>
+<html lang="pt-br">
 <head>
-  <title>Teste</title>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Dashboard Executivo</title>
+
+<style>
+body {
+  margin: 0;
+  font-family: Arial, sans-serif;
+  background: linear-gradient(135deg, #f0f0f0, #e2e2e2);
+}
+
+header {
+  padding: 20px;
+  text-align: center;
+  background: #3a3f45;
+  color: white;
+  font-size: 24px;
+  font-weight: bold;
+}
+
+.container {
+  padding: 20px;
+}
+
+.grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+  gap: 15px;
+}
+
+.card {
+  background: #fff;
+  padding: 15px;
+  border-radius: 12px;
+  box-shadow: 0 4px 10px rgba(0,0,0,0.08);
+  transition: 0.3s;
+}
+
+.card:hover {
+  transform: translateY(-5px);
+}
+
+.title {
+  font-size: 18px;
+  font-weight: bold;
+}
+
+.desc {
+  font-size: 13px;
+  margin: 8px 0;
+  color: #555;
+}
+
+.meta {
+  font-size: 12px;
+  color: #777;
+  margin-bottom: 10px;
+}
+
+.btn {
+  padding: 8px 12px;
+  background: #444;
+  color: white;
+  border: none;
+  border-radius: 6px;
+  cursor: pointer;
+}
+
+.active {
+  border-left: 5px solid #2ecc71;
+}
+
+.inactive {
+  border-left: 5px solid #e74c3c;
+}
+</style>
 </head>
-<body style="font-family: Arial; text-align:center; padding:50px;">
-  <h1>✅ SITE FUNCIONANDO</h1>
-  <p>Se você está vendo isso, está tudo certo.</p>
+
+<body>
+
+<header>📊 Dashboard Executivo de Repositórios</header>
+
+<div class="container">
+<div class="grid" id="repos"></div>
+</div>
+
+<script>
+
+const USER = "comercialzaffaricd107-cloud";
+
+function getSiteUrl(repo){
+  return `https://${USER}.github.io/${repo.name}/`;
+}
+
+function openSmart(repo){
+  const site = getSiteUrl(repo);
+
+  fetch(site, { method: "HEAD" })
+    .then(res => {
+      if (res.ok) {
+        window.open(site, "_blank");
+      } else {
+        window.open(repo.html_url, "_blank");
+      }
+    })
+    .catch(() => {
+      window.open(repo.html_url, "_blank");
+    });
+}
+
+async function loadRepos() {
+  const res = await fetch(`https://api.github.com/users/${USER}/repos?per_page=100`);
+  const data = await res.json();
+
+  const container = document.getElementById("repos");
+  container.innerHTML = "";
+
+  data.sort((a,b) => new Date(b.updated_at) - new Date(a.updated_at));
+
+  data.forEach(repo => {
+
+    const lastUpdate = new Date(repo.updated_at);
+    const diffDays = (Date.now() - lastUpdate) / (1000*60*60*24);
+
+    const statusClass = diffDays > 30 ? "inactive" : "active";
+
+    const card = document.createElement("div");
+    card.className = `card ${statusClass}`;
+
+    card.innerHTML = `
+      <div class="title">${repo.name}</div>
+      <div class="desc">${repo.description || "Sem descrição"}</div>
+      <div class="meta">
+        ⭐ ${repo.stargazers_count} |
+        🐛 ${repo.open_issues_count} |
+        💻 ${repo.language || "-"}
+      </div>
+      <div class="meta">
+        Atualizado: ${lastUpdate.toLocaleDateString()}
+      </div>
+      <button class="btn">Abrir</button>
+    `;
+
+    card.querySelector(".btn").onclick = () => openSmart(repo);
+
+    container.appendChild(card);
+  });
+}
+
+loadRepos();
+
+</script>
+
 </body>
 </html>
